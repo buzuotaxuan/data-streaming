@@ -1,13 +1,11 @@
-FROM amd64/openjdk:17-alpine as build
+FROM fabric8/java-centos-openjdk11-jre:1.8 as build
 WORKDIR /workspace/app
 
 COPY target/*.jar .
 
 RUN mkdir -p dependency && (cd dependency; jar -xf ../*.jar)
 
-FROM amd64/openjdk:17-alpine
-
-LABEL maintainer="FIT2CLOUD <support@fit2cloud.com>"
+FROM fabric8/java-centos-openjdk11-jre:1.8
 
 ARG MS_VERSION=dev
 ARG DEPENDENCY=/workspace/app/dependency
