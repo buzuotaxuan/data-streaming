@@ -1,11 +1,11 @@
-FROM fabric8/java-centos-openjdk11-jre:1.8 as build
+FROM openjdk:8-jdk-alpine as build
 WORKDIR /workspace/app
 
 COPY target/*.jar .
 
 RUN mkdir -p dependency && (cd dependency; jar -xf ../*.jar)
 
-FROM fabric8/java-centos-openjdk11-jre:1.8
+FROM fabric8/java-alpine-openjdk11-jre:1.8
 
 ARG MS_VERSION=dev
 ARG DEPENDENCY=/workspace/app/dependency
