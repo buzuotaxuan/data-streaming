@@ -182,7 +182,7 @@ public class TestResultService {
         loadTest.setStatus(TestStatus.Completed.name());
         loadTestMapper.updateByPrimaryKeySelective(loadTest);
 
-        LogUtil.info("test completed: " + report.getTestId());
+        LogUtil.info("测试[{}]结束, reportId: {}", report.getTestId(), reportId);
     }
 
     private void saveJtlFile(String reportId) {
