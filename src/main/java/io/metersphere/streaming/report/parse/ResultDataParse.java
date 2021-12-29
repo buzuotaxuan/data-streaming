@@ -20,8 +20,10 @@ import org.mybatis.spring.batch.MyBatisCursorItemReader;
 import org.mybatis.spring.batch.builder.MyBatisCursorItemReaderBuilder;
 import org.springframework.batch.item.ExecutionContext;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -296,6 +298,56 @@ public class ResultDataParse {
             LogUtil.error(e);
         } finally {
             myBatisCursorItemReader.close();
+        }
+
+        consumerList.forEach(SampleConsumer::stopConsuming);
+
+        return resultSampleContext;
+    }
+
+    /**
+     * 根据本地文件计算报告
+     *
+     * @param jtlFile      jtl文件
+     * @param consumerList 消费者组合
+     */
+    public static Map<String, SampleContext> computeReport(File jtlFile, List<AbstractSampleConsumer> consumerList) {
+        int row = 0;
+        // 使用反射获取properties
+        MsJMeterUtils.loadJMeterProperties("jmeter.properties");
+        SampleMetadata sampleMetaData = createTestMetaData();
+
+        Map<String, SampleContext> resultSampleContext = new HashMap<>();
+        consumerList.forEach(consumer -> {
+            SampleContext sampleContext = new SampleContext();
+            consumer.setSampleContext(sampleContext);
+            consumer.startConsuming();
+            resultSampleContext.put(consumer.getClass().getSimpleName(), sampleContext);
+        });
+
+        try {
+            Iterator<String> iterator = Files.lines(jtlFile.toPath()).skip(1).iterator();
+
+            while (iterator.hasNext()) {
+                //
+                String content = iterator.next();
+                StringTokenizer tokenizer = new StringTokenizer(content, "\n");
+                while (tokenizer.hasMoreTokens()) {
+                    String line = tokenizer.nextToken();
+                    String[] data = CSVUtils.parseLine(line);
+                    Sample sample = new Sample(row++, sampleMetaData, data);
+
+                    consumerList.forEach(consumer -> {
+                        try {
+                            consumer.consume(sample, 0);
+                        } catch (Exception e) {
+                            LogUtil.error(consumer.getName(), e);
+                        }
+                    });
+                }
+            }
+        } catch (Exception e) {
+            LogUtil.error(e);
         }
 
         consumerList.forEach(SampleConsumer::stopConsuming);
