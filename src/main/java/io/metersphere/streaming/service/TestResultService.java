@@ -387,5 +387,7 @@ public class TestResultService {
         loadTest.setDescription(message);
         loadTest.setUpdateTime(System.currentTimeMillis());
         loadTestMapper.updateByPrimaryKeySelective(loadTest);
+        // 发送报错消息到 kafka
+        loadTestProducer.sendMessage(testReportFromDB);
     }
 }
